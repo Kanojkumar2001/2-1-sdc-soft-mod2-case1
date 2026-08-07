@@ -1,0 +1,50 @@
+fuzzy_system:
+  income_levels:
+    low: [0, 0, 20000, 30000]
+    medium: [25000, 35000, 45000, 55000]
+    high: [45000, 60000, 80000, 100000]
+  
+  expense_levels:
+    low: [0, 0, 15000, 25000]
+    medium: [20000, 30000, 40000, 50000]
+    high: [40000, 50000, 70000, 100000]
+  
+  savings_levels:
+    low: [0, 0, 5000, 10000]
+    medium: [8000, 12000, 18000, 25000]
+    high: [20000, 30000, 50000, 80000]
+  
+  debt_levels:
+    low: [0, 0, 5000, 10000]
+    medium: [8000, 15000, 25000, 35000]
+    high: [25000, 35000, 50000, 80000]
+  
+  risk_tolerance:
+    low: [0, 0, 3, 5]
+    medium: [3, 5, 7, 8]
+    high: [7, 8, 10, 10]
+
+  behavior_categories:
+    - cautious
+    - moderate
+    - aggressive
+    - conservative
+
+  strategies:
+    - budget_planning
+    - debt_management
+    - emergency_fund_building
+    - investment_optimization
+    - retirement_planning
+    - wealth_building
+    - risk_management
+
+model_parameters:
+  inference_method: "mamdani"
+  defuzzification_method: "centroid"
+  rule_importance_weight: 0.7
+
+data_processing:
+  normalization_method: "min_max"
+  handle_missing: "mean"
+  outlier_threshold: 3.0
