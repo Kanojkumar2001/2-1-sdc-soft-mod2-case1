@@ -1,199 +1,159 @@
-"""
-Main entry point for the Personal Finance Advisor System
-"""
-
 import sys
-import logging
-from pathlib import Path
-import yaml
+import os
 import pandas as pd
+import numpy as np
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+# Add the src directory to Python path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# Add src to path
-sys.path.append(str(PROJECT_ROOT))
-
-from src.data_preprocessing.data_loader import DataLoader
-from src.data_preprocessing.data_cleaner import DataCleaner
-from src.fuzzy_system.inference_system import FuzzyInferenceSystem
-from src.models.fuzzy_classifier import FuzzyClassifier
-from src.models.strategy_recommender import StrategyRecommender
-from src.utils.validators import InputValidator
-from src.utils.helpers import setup_logging
-
-class FinanceAdvisor:
-    """Main class for the Personal Finance Advisor System"""
-    
-    def __init__(self, config_path="config/config.yaml"):
-        """Initialize the finance advisor system"""
-        self.logger = setup_logging()
-        self.config = self._load_config(config_path)
-        
-        # Initialize components
-        self.data_loader = DataLoader()
-        self.data_cleaner = DataCleaner()
-        self.fuzzy_system = FuzzyInferenceSystem(self.config)
-        self.classifier = FuzzyClassifier(self.fuzzy_system)
-        self.recommender = StrategyRecommender(self.fuzzy_system)
-        self.validator = InputValidator()
-        
-        self.logger.info("Finance Advisor System initialized successfully")
-    
-    def _load_config(self, config_path):
-        """Load configuration from YAML file"""
-        config_path = self._resolve_path(config_path)
-        with open(config_path, 'r', encoding='utf-8') as file:
-            return yaml.safe_load(file)
-
-    def _resolve_path(self, path):
-        """Resolve a path relative to the project root."""
-        if not path:
-            return PROJECT_ROOT / 'config' / 'config.yaml'
-
-        path_obj = Path(path)
-        if path_obj.is_absolute():
-            return path_obj
-
-        for base in [PROJECT_ROOT, Path.cwd()]:
-            candidate = base / path_obj
-            if candidate.exists():
-                return candidate
-
-        return PROJECT_ROOT / path_obj
-    
-    def process_user_data(self, user_data):
-        """Process a single user's financial data"""
-        try:
-            # Validate input
-            is_valid, errors = self.validator.validate_user_data(user_data)
-            if not is_valid:
-                raise ValueError(f"Invalid user data: {errors}")
-            
-            # Clean data
-            cleaned_data = self.data_cleaner.clean_single_user(user_data)
-            
-            # Classify behavior using fuzzy logic
-            behavior = self.classifier.classify(cleaned_data)
-            
-            # Get strategy recommendations
-            strategies = self.recommender.recommend(behavior, cleaned_data)
-            
-            # Generate report
-            report = {
-                'user_id': user_data.get('user_id', 'unknown'),
-                'behavior_category': behavior,
-                'recommended_strategies': strategies,
-                'risk_score': self._calculate_risk_score(cleaned_data),
-                'financial_health_score': self._calculate_health_score(cleaned_data)
-            }
-            
-            return report
-            
-        except Exception as e:
-            self.logger.error(f"Error processing user data: {str(e)}")
-            raise
-    
-    def process_batch_data(self, file_path):
-        """Process multiple users from a CSV file"""
-        try:
-            # Load data
-            df = self.data_loader.load_csv(file_path)
-            
-            # Clean data
-            cleaned_df = self.data_cleaner.clean_batch(df)
-            
-            # Process each user
-            reports = []
-            for _, row in cleaned_df.iterrows():
-                user_data = row.to_dict()
-                report = self.process_user_data(user_data)
-                reports.append(report)
-            
-            # Save reports
-            report_df = pd.DataFrame(reports)
-            output_path = PROJECT_ROOT / 'outputs' / 'reports' / 'financial_advice_report.csv'
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            report_df.to_csv(output_path, index=False)
-            
-            self.logger.info(f"Processed {len(reports)} users successfully")
-            return reports
-            
-        except Exception as e:
-            self.logger.error(f"Error processing batch data: {str(e)}")
-            raise
-    
-    def _calculate_risk_score(self, user_data):
-        """Calculate overall risk score"""
-        income = user_data.get('income', 0)
-        savings = user_data.get('savings', 0)
-        debt = user_data.get('debt', 0)
-        risk_tolerance = user_data.get('risk_tolerance', 5)
-        
-        # Simple risk calculation
-        debt_ratio = debt / (income + 1)  # Avoid division by zero
-        savings_ratio = savings / (income + 1)
-        
-        risk_score = (risk_tolerance / 10) * 0.4 + \
-                    (1 - debt_ratio) * 0.3 + \
-                    savings_ratio * 0.3
-        
-        return min(max(risk_score * 100, 0), 100)
-    
-    def _calculate_health_score(self, user_data):
-        """Calculate financial health score"""
-        income = user_data.get('income', 0)
-        expenses = user_data.get('expenses', 0)
-        savings = user_data.get('savings', 0)
-        debt = user_data.get('debt', 0)
-        
-        # Financial health indicators
-        saving_rate = savings / (income + 1)
-        expense_rate = expenses / (income + 1)
-        debt_ratio = debt / (income + 1)
-        
-        health_score = (saving_rate * 0.4) + \
-                      (1 - expense_rate) * 0.3 + \
-                      (1 - debt_ratio) * 0.3
-        
-        return min(max(health_score * 100, 0), 100)
+from fuzzy_controller import FuzzyController
+from vehicle_simulator import VehicleSimulator
 
 def main():
-    """Main function to run the advisor system"""
-    # Initialize system
-    advisor = FinanceAdvisor()
+    """Main execution function"""
+    print("Initializing Autonomous Vehicle Fuzzy Control System...")
     
-    # Test with sample user
-    sample_user = {
-        'user_id': 51,
-        'age': 35,
-        'income': 45000,
-        'expenses': 28000,
-        'savings': 12000,
-        'debt': 8000,
-        'risk_tolerance': 6,
-        'investment_knowledge': 5,
-        'financial_goals': 'wealth_building',
-        'employment_status': 'employed',
-        'dependents': 2
+    # Get the project root directory
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_raw_path = os.path.join(project_root, 'data', 'raw', 'sensor_data.csv')
+    data_processed_path = os.path.join(project_root, 'data', 'processed', 'training_data.csv')
+    results_plots_path = os.path.join(project_root, 'results', 'plots')
+    
+    # Create directories if they don't exist
+    os.makedirs(os.path.dirname(data_raw_path), exist_ok=True)
+    os.makedirs(os.path.dirname(data_processed_path), exist_ok=True)
+    os.makedirs(results_plots_path, exist_ok=True)
+    
+    # Load dataset
+    try:
+        sensor_data = pd.read_csv(data_raw_path)
+        print(f"Loaded {len(sensor_data)} sensor readings from {data_raw_path}")
+    except FileNotFoundError:
+        print("Sensor data not found. Generating sample data...")
+        sensor_data = generate_sample_data(data_raw_path)
+    
+    # Initialize simulator
+    simulator = VehicleSimulator()
+    
+    # Run simulation
+    print("Running simulation...")
+    results = simulator.simulate_scenario(sensor_data)
+    
+    # Save results
+    results.to_csv(data_processed_path, index=False)
+    print(f"Simulation complete. Results saved to {data_processed_path}")
+    
+    # Analyze results
+    analyze_results(results, results_plots_path)
+
+def generate_sample_data(save_path):
+    """Generate sample sensor data if file doesn't exist"""
+    np.random.seed(42)
+    
+    # Generate 50 records
+    data = {
+        'distance_obstacle': np.concatenate([
+            np.random.uniform(0, 15, 10),
+            np.random.uniform(15, 30, 10),
+            np.random.uniform(30, 55, 15),
+            np.random.uniform(55, 100, 15)
+        ]),
+        'speed': np.random.uniform(0, 80, 50),
+        'steering_angle': np.random.uniform(-30, 30, 50),
+        'traffic_density': np.random.uniform(0, 1, 50),
+        'road_curvature': np.random.uniform(0, 1, 50),
+        'lane_position': np.random.uniform(-1, 1, 50),
     }
     
-    # Process user
-    report = advisor.process_user_data(sample_user)
+    df = pd.DataFrame(data)
+    df = df.sample(frac=1).reset_index(drop=True)
     
-    print("\n" + "="*60)
-    print("PERSONAL FINANCE ADVISOR - RECOMMENDATION REPORT")
-    print("="*60)
-    print(f"User ID: {report['user_id']}")
-    print(f"Behavior Category: {report['behavior_category']}")
-    print(f"Risk Score: {report['risk_score']:.2f}/100")
-    print(f"Financial Health Score: {report['financial_health_score']:.2f}/100")
-    print("\nRecommended Strategies:")
-    for strategy in report['recommended_strategies']:
-        print(f"  • {strategy}")
-    print("="*60 + "\n")
+    # Add target outputs
+    def compute_recommended_speed(row):
+        if row['distance_obstacle'] < 15 or row['traffic_density'] > 0.7:
+            return np.random.uniform(5, 20)
+        elif row['distance_obstacle'] < 30 or row['traffic_density'] > 0.5:
+            return np.random.uniform(20, 40)
+        elif row['distance_obstacle'] < 55 or row['road_curvature'] > 0.6:
+            return np.random.uniform(40, 60)
+        else:
+            return np.random.uniform(60, 80)
     
-    # Process batch data (optional)
-    # advisor.process_batch_data('data/raw/user_data_sample.csv')
+    def compute_recommended_steering(row):
+        if abs(row['steering_angle']) > 20:
+            return row['steering_angle'] * 0.8
+        elif abs(row['steering_angle']) > 10:
+            return row['steering_angle'] * 0.6
+        elif row['road_curvature'] > 0.7:
+            return np.random.uniform(10, 25) * np.random.choice([-1, 1])
+        else:
+            return row['lane_position'] * 10
+    
+    df['recommended_speed'] = df.apply(compute_recommended_speed, axis=1)
+    df['recommended_steering'] = df.apply(compute_recommended_steering, axis=1)
+    
+    df.to_csv(save_path, index=False)
+    print(f"Generated {len(df)} sample records and saved to {save_path}")
+    return df
+
+def analyze_results(results, save_path):
+    """Analyze and display simulation results"""
+    print("\n--- Simulation Results Analysis ---")
+    print(f"Average Speed Command: {results['output_speed'].mean():.2f} km/h")
+    print(f"Average Steering Command: {results['output_steering'].mean():.2f} degrees")
+    print(f"Max Speed Command: {results['output_speed'].max():.2f} km/h")
+    print(f"Min Speed Command: {results['output_speed'].min():.2f} km/h")
+    
+    # Safety metrics
+    dangerous_scenarios = results[
+        (results['input_distance'] < 15) & 
+        (results['output_speed'] > 20)
+    ]
+    print(f"\nDangerous scenarios (distance<15m, speed>20km/h): {len(dangerous_scenarios)}")
+    
+    # Plot if matplotlib is available
+    try:
+        import matplotlib.pyplot as plt
+        
+        fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+        
+        # Speed control
+        axes[0, 0].scatter(results['input_distance'], results['output_speed'], alpha=0.6)
+        axes[0, 0].set_xlabel('Distance to Obstacle (m)')
+        axes[0, 0].set_ylabel('Speed Command (km/h)')
+        axes[0, 0].set_title('Speed Response vs Distance')
+        axes[0, 0].grid(True, alpha=0.3)
+        
+        # Steering control
+        axes[0, 1].scatter(results['input_steering'], results['output_steering'], alpha=0.6)
+        axes[0, 1].set_xlabel('Input Steering (degrees)')
+        axes[0, 1].set_ylabel('Output Steering Command (degrees)')
+        axes[0, 1].set_title('Steering Response')
+        axes[0, 1].grid(True, alpha=0.3)
+        
+        # Traffic influence
+        axes[1, 0].scatter(results['input_traffic'], results['output_speed'], alpha=0.6)
+        axes[1, 0].set_xlabel('Traffic Density')
+        axes[1, 0].set_ylabel('Speed Command (km/h)')
+        axes[1, 0].set_title('Speed vs Traffic Density')
+        axes[1, 0].grid(True, alpha=0.3)
+        
+        # Vehicle path
+        axes[1, 1].plot(results['position_x'], results['position_y'], 'b-', linewidth=2)
+        axes[1, 1].set_xlabel('X Position (m)')
+        axes[1, 1].set_ylabel('Y Position (m)')
+        axes[1, 1].set_title('Vehicle Path')
+        axes[1, 1].grid(True, alpha=0.3)
+        axes[1, 1].axis('equal')
+        
+        plt.tight_layout()
+        plot_path = os.path.join(save_path, 'simulation_analysis.png')
+        plt.savefig(plot_path, dpi=150)
+        print(f"Analysis plots saved to {plot_path}")
+        plt.show()
+        
+    except ImportError:
+        print("Matplotlib not available. Skipping plots.")
 
 if __name__ == "__main__":
     main()

@@ -1,7 +1,17 @@
 """
-Personal Finance Advisor - Soft Computing Based System
-Using Fuzzy Logic for Financial Behavior Classification
+Fuzzy Control System for Autonomous Vehicle
 """
 
-__version__ = "1.0.0"
-__author__ = "Your Name"
+from fuzzy_controller import FuzzyController
+from fuzzy_sets import TriangularFuzzySet, TrapezoidalFuzzySet, GaussianFuzzySet
+from rule_engine import RuleEngine
+from vehicle_simulator import VehicleSimulator
+
+__all__ = [
+    'FuzzyController',
+    'TriangularFuzzySet',
+    'TrapezoidalFuzzySet',
+    'GaussianFuzzySet',
+    'RuleEngine',
+    'VehicleSimulator'
+]
